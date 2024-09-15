@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "node --env-file=.env --watch -r ts-node/register src/index.ts",
-    "test": "node --env-file=.env --watch -r ts-node/register src/**/**.test.ts"
+    "test": "node --test --env-file=.env --watch -r ts-node/register **/*.test.ts"
   },
   "keywords": [
     "database",

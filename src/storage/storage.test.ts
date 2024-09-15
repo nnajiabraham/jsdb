@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { after, beforeEach, describe, it } from 'node:test';
 import fs from 'fs';
 import path from 'path';
-import Storage from './storage';
+import Storage from './Storage';
+import Record from '../Record/Record';
 
 describe('Storage', () => {
   const testDbPath = path.join(__dirname, 'data.db');
@@ -12,9 +13,16 @@ describe('Storage', () => {
     // If the file exists, empty it. Otherwise, do nothing.
     // This allows us to test that Storage.ts creates the db file if it doesn't exist
     if (fs.existsSync(testDbPath)) {
-      fs.writeFileSync(testDbPath, '', 'utf-8');
+      fs.writeFileSync(testDbPath, '', 'binary');
     }
   });
+
+  // after(() => {
+  //   // Remove the test db file after the tests are run
+  //   if (fs.existsSync(testDbPath)) {
+  //     fs.unlinkSync(testDbPath);
+  //   }
+  // });
 
   // Test cases will be added here
   it('should be able to create file for Storage class with the filename if not exists', () => {
@@ -23,9 +31,8 @@ describe('Storage', () => {
     
     assert.strictEqual(storage.filePath, path.join(__dirname, filename).toString());
     assert.ok(fs.existsSync(path.join(__dirname, filename)));
-    assert.strictEqual(fs.readFileSync(path.join(__dirname, filename), 'utf-8'), '');
-    assert.strictEqual(storage.recordSize, 28);
-
+    assert.strictEqual(fs.readFileSync(path.join(__dirname, filename), 'binary'), '');
+    
     // Cleanup
     fs.unlinkSync(path.join(__dirname, filename));
   });
@@ -37,28 +44,27 @@ describe('Storage', () => {
     
     assert.strictEqual(storage.filePath, testDbPath);
     assert.ok(fs.existsSync(testDbPath));
-    assert.strictEqual(fs.readFileSync(testDbPath, 'utf-8'), '');
-    assert.strictEqual(storage.recordSize, 28);
+    assert.strictEqual(fs.readFileSync(testDbPath, 'binary'), '');
   });
 
-  it('should be able to store, count and read records', () => {
+  it('should be able to store, count and read records', async () => {
     const filename = 'data.db';
     const storage = new Storage(filename);
 
     const recordsToAdd = [
-      { id: 2, name: 'Bob', age: 25 },
-      { id: 3, name: 'Charlie', age: 28 }
-    ]
+      new Record(2, 'Bob', 'bob@example.com'),
+      new Record(3, 'Charlie', 'charlie@example.com')
+    ];
 
     // Store records
-    storage.appendRecord(recordsToAdd[0]);
-    storage.appendRecord(recordsToAdd[1]);
+    await storage.writeRecordToFile(recordsToAdd[0]);
+    await storage.writeRecordToFile(recordsToAdd[1]);
 
     // Count records
     assert.strictEqual(storage.countRecords(), 2);
 
     // Read records
-    const fileRecords = storage.readAllRecordsFromStorageFile();
+    const fileRecords = await storage.readAllRecordsFromStorageFile();
     assert.deepStrictEqual(fileRecords, recordsToAdd);
 
     // Read records from in-memory records and compare with file records
