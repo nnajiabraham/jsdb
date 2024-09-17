@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import Record from '../Record/Record';
+import Record, { RecordData } from '../Record/Record';
 
 
 class Storage {
@@ -25,20 +25,23 @@ class Storage {
   }
 
   async writeRecordToFile(record: Record) {
-    const serialized = record.serialize();
+    const serialized = record.data_bytes;
     // console.log(serialized);
     await fs.promises.appendFile(this.filePath, serialized , { encoding: 'binary' });
+    this.writeToInMemoryRecords(record);
+  }
+
+  writeToInMemoryRecords(record: Record) {
     this._records.push(record);
   }
 
-  async readAllRecordsFromStorageFile(): Promise<Record[]> {
-    const data = await fs.promises.readFile(this.filePath);
-    console.log("data", data);
-    const records: Record[] = [];
-    for (let i = 0; i < data.length; i += Record.size) {
-      const recordBuffer = Buffer.from(data.slice(i, i + Record.size));
-      if (recordBuffer.length > 0 && recordBuffer.some(byte => byte !== 0)) {
-        records.push(Record.deserialize(recordBuffer));
+  async readAllRecordsFromStorageFile(): Promise<RecordData[]> {
+    const storage_data = await fs.promises.readFile(this.filePath);
+    const records: RecordData[] = [];
+    for (let i = 0; i < storage_data.length; i += Record.size) {
+      const individual_record = storage_data.subarray(i, i + Record.size);
+      if (individual_record.length > 0 && individual_record.some(byte => byte !== 0)) {
+        records.push(Record.deserialize(individual_record));
       }
     }
     return records;

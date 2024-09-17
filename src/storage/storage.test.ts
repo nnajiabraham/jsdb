@@ -17,12 +17,12 @@ describe('Storage', () => {
     }
   });
 
-  // after(() => {
-  //   // Remove the test db file after the tests are run
-  //   if (fs.existsSync(testDbPath)) {
-  //     fs.unlinkSync(testDbPath);
-  //   }
-  // });
+  after(() => {
+    // Remove the test db file after the tests are run
+    if (fs.existsSync(testDbPath)) {
+      fs.unlinkSync(testDbPath);
+    }
+  });
 
   // Test cases will be added here
   it('should be able to create file for Storage class with the filename if not exists', () => {
@@ -52,8 +52,8 @@ describe('Storage', () => {
     const storage = new Storage(filename);
 
     const recordsToAdd = [
-      new Record(2, 'Bob', 'bob@example.com'),
-      new Record(3, 'Charlie', 'charlie@example.com')
+      new Record({ id: '2', name: 'Bob', email: 'bob@example.com' }),
+      new Record({ id: '3', name: 'Charlie', email: 'charlie@example.com' })
     ];
 
     // Store records
@@ -65,7 +65,7 @@ describe('Storage', () => {
 
     // Read records
     const fileRecords = await storage.readAllRecordsFromStorageFile();
-    assert.deepStrictEqual(fileRecords, recordsToAdd);
+    assert.deepStrictEqual(fileRecords, recordsToAdd.map(record => Record.deserialize(record.data_bytes)));
 
     // Read records from in-memory records and compare with file records
     assert.deepStrictEqual(storage.inMemoryRecords, recordsToAdd);
